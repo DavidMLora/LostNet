@@ -1,0 +1,31 @@
+---
+import '../styles/my-reports.css';
+---
+
+<section class="my-reports-card" aria-labelledby="my-reports-title">
+  <header class="my-reports-header">
+    <div>
+      <p class="eyebrow">CU-10 · Gestión personal</p>
+      <h3 id="my-reports-title">Reportes que publicaste</h3>
+      <p class="my-reports-intro">Consulta tus publicaciones y elimina las que ya no necesites.</p>
+    </div>
+    <button id="my-reports-refresh" class="my-reports-refresh" type="button">
+      Actualizar lista
+    </button>
+  </header>
+
+  <p id="my-reports-feedback" class="my-reports-feedback" role="status" aria-live="polite">
+    Cargando tus reportes…
+  </p>
+  <div id="my-reports-list" class="my-reports-list" aria-live="polite"></div>
+</section>
+
+<script>
+  import { initMyReports } from '../scripts/my-reports.js';
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMyReports);
+  } else {
+    initMyReports();
+  }
+</script>

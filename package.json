@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
+    "mock:api": "node scripts/mock-api.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "test": "node --test"
