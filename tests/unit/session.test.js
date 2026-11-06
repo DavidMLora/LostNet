@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
-import { readGoogleCredential } from '../src/scripts/auth.js';
-import { createSession } from '../src/scripts/session.js';
+import { test } from 'vitest';
+import { readGoogleCredential } from '../../src/scripts/auth.js';
+import { createSession } from '../../src/scripts/session.js';
 
 const clientId = 'phase-1-test.apps.googleusercontent.com';
 const nonce = 'nonce-de-prueba';
