@@ -1,0 +1,20 @@
+{
+  "name": "lostnet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "astro": "7.4.5"
+  },
+  "engines": {
+    "node": ">=24.16.0 <25",
+    "npm": ">=11 <12"
+  },
+  "packageManager": "npm@11.13.0"
+}

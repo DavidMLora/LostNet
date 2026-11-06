@@ -1,0 +1,126 @@
+---
+import Brand from '../components/Brand.astro';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Panel">
+  <main class="shell">
+    <p id="session-status" role="status"></p>
+    <noscript><p>Activa JavaScript para consultar tu sesión de LostNet.</p></noscript>
+
+    <div id="dashboard-content" hidden>
+      <header class="dashboard-header">
+        <Brand />
+        <button id="sign-out" type="button">Cerrar sesión</button>
+      </header>
+
+      <div class="dashboard-intro">
+        <p class="eyebrow">Tu espacio</p>
+        <h1>Panel de LostNet</h1>
+        <p id="session-greeting"></p>
+      </div>
+
+      <section id="map-module" class="placeholder" aria-labelledby="map-title">
+        <h2 id="map-title">Mapa de reportes</h2>
+        <p>El módulo de mapa se integrará aquí en una fase posterior.</p>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { clearSession, getSession } from '../scripts/session.js';
+
+  const content = document.getElementById('dashboard-content');
+  const status = document.getElementById('session-status');
+  const greeting = document.getElementById('session-greeting');
+  const signOut = document.getElementById('sign-out');
+  let expiryTimer;
+
+  function checkSession() {
+    clearTimeout(expiryTimer);
+    const session = getSession();
+    if (!session) {
+      content.hidden = true;
+      greeting.textContent = '';
+      status.textContent = 'Volviendo al inicio de sesión…';
+      window.location.replace('/');
+      return;
+    }
+
+    greeting.textContent = session.user.name ? `Hola, ${session.user.name}.` : 'Sesión de Google activa.';
+    status.textContent = '';
+    content.hidden = false;
+    expiryTimer = setTimeout(checkSession,
+      Math.max(0, Math.min(session.expiresAt - Date.now(), 2_147_483_647)));
+  }
+
+  signOut.addEventListener('click', () => {
+    content.hidden = true;
+    greeting.textContent = '';
+    clearTimeout(expiryTimer);
+    try {
+      clearSession();
+      window.location.replace('/');
+    } catch {
+      status.textContent = 'No se pudo borrar la sesión. Cierra esta pestaña para terminar el acceso.';
+    }
+  });
+
+  window.addEventListener('pagehide', () => {
+    clearTimeout(expiryTimer);
+    content.hidden = true;
+    greeting.textContent = '';
+  });
+  window.addEventListener('pageshow', checkSession);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkSession();
+  });
+  checkSession();
+</script>
+
+<style>
+  .shell {
+    width: min(100% - 2rem, 65rem);
+    margin-inline: auto;
+    padding-block: 1.5rem 4rem;
+  }
+
+  #session-status:empty { display: none; }
+
+  .dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-block-end: 1.5rem;
+    border-block-end: 1px solid var(--line);
+  }
+
+  button {
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.75rem;
+    padding: 0.65rem 0.95rem;
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  button:hover { border-color: var(--accent); }
+
+  .dashboard-intro { padding-block: 3rem 1.5rem; }
+  .dashboard-intro h1 { margin-block: 0.5rem; font-size: clamp(2rem, 5vw, 3rem); }
+
+  .placeholder {
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+    border: 1px dashed var(--line);
+    border-radius: 1rem;
+    background: var(--surface);
+  }
+
+  .placeholder h2 { margin-block: 0 0.5rem; font-size: 1.25rem; }
+  .placeholder p, #session-greeting { margin: 0; color: var(--muted); }
+</style>
