@@ -1,0 +1,267 @@
+---
+// src/components/ReportForm.astro
+import '../styles/report-form.css';
+---
+
+<div class="report-form-card">
+  <div class="report-form-header">
+    <div>
+      <p class="eyebrow">CU-03 / CU-07 · Publicación rápida</p>
+      <h3>Publicar un reporte</h3>
+    </div>
+    <span class="report-speed-badge" title="Formulario optimizado para publicarse en menos de 60 segundos">
+      ⚡ Toma menos de 60 s
+    </span>
+  </div>
+
+  <form id="report-form" novalidate>
+    <!-- Selector de tipo de reporte: Perdido (LOST) vs Encontrado (FOUND) -->
+    <fieldset class="status-toggle-group">
+      <legend class="status-toggle-legend">
+        Tipo de reporte <span class="required-mark" aria-hidden="true">*</span>
+      </legend>
+      <div class="status-toggle">
+        <div class="status-option">
+          <input
+            type="radio"
+            id="status-lost"
+            name="status"
+            value="LOST"
+            checked
+          />
+          <label for="status-lost" class="status-label">
+            <span class="status-dot status-dot--lost" aria-hidden="true"></span>
+            Objeto Perdido
+          </label>
+        </div>
+
+        <div class="status-option">
+          <input
+            type="radio"
+            id="status-found"
+            name="status"
+            value="FOUND"
+          />
+          <label for="status-found" class="status-label">
+            <span class="status-dot status-dot--found" aria-hidden="true"></span>
+            Objeto Encontrado
+          </label>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- Título / Nombre y Categoría -->
+    <div class="report-form-grid">
+      <div class="form-field">
+        <div class="form-label-row">
+          <label for="report-title" class="form-label">
+            Objeto / Título <span class="required-mark" aria-hidden="true">*</span>
+          </label>
+        </div>
+        <input
+          type="text"
+          id="report-title"
+          name="title"
+          class="form-input"
+          placeholder="Ej. Credencial UAA, Audífonos JBL negros…"
+          minlength="3"
+          maxlength="60"
+          autocomplete="off"
+          required
+        />
+        <p id="error-report-title" class="field-error" role="alert" hidden></p>
+      </div>
+
+      <div class="form-field">
+        <div class="form-label-row">
+          <label for="report-category" class="form-label">
+            Categoría <span class="required-mark" aria-hidden="true">*</span>
+          </label>
+        </div>
+        <select id="report-category" name="category" class="form-select" required>
+          <option value="" disabled selected>Selecciona una categoría…</option>
+          <option value="Documentos">Documentos</option>
+          <option value="Electrónica">Electrónica</option>
+          <option value="Ropa">Ropa</option>
+          <option value="Otros">Otros</option>
+        </select>
+        <p id="error-report-category" class="field-error" role="alert" hidden></p>
+      </div>
+    </div>
+
+    <!-- Descripción detallada -->
+    <div class="form-field">
+      <div class="form-label-row">
+        <label for="report-description" class="form-label">
+          Descripción detallada <span class="required-mark" aria-hidden="true">*</span>
+        </label>
+        <span id="report-description-counter" class="char-counter" aria-live="polite">
+          0 / 250
+        </span>
+      </div>
+      <textarea
+        id="report-description"
+        name="description"
+        class="form-textarea"
+        placeholder="Describe color, marca, señas particulares y el edificio o lugar aproximado…"
+        minlength="5"
+        maxlength="250"
+        rows="3"
+        required
+      ></textarea>
+      <p id="error-report-description" class="field-error" role="alert" hidden></p>
+    </div>
+
+    <!-- Fotografía y Ubicación -->
+    <div class="media-location-grid">
+      <!-- Fotografía con previsualización inmediata -->
+      <div class="form-field">
+        <div class="form-label-row">
+          <label for="report-photo" class="form-label">
+            Fotografía del objeto <span class="required-mark" aria-hidden="true">*</span>
+          </label>
+        </div>
+
+        <div id="photo-dropzone" class="photo-dropzone">
+          <input
+            type="file"
+            id="report-photo"
+            name="foto"
+            class="photo-input-native"
+            accept="image/jpeg,image/png,image/webp,image/*"
+            required
+          />
+
+          <div id="photo-placeholder" class="photo-placeholder">
+            <span class="photo-icon" aria-hidden="true">📷</span>
+            <p class="photo-prompt">Haz clic o arrastra una foto aquí</p>
+            <p class="photo-hint">JPG, PNG o WEBP (máx. 10 MB)</p>
+          </div>
+
+          <div id="photo-preview-wrapper" class="photo-preview-wrapper" hidden>
+            <img
+              id="photo-preview-img"
+              class="photo-preview-img"
+              alt="Previsualización de la fotografía del objeto"
+            />
+            <div class="photo-preview-meta">
+              <span id="photo-file-name" class="photo-file-name"></span>
+              <span id="photo-file-size"></span>
+              <button
+                type="button"
+                id="photo-clear-btn"
+                class="photo-clear-btn"
+                aria-label="Quitar fotografía seleccionada"
+              >
+                Quitar
+              </button>
+            </div>
+          </div>
+        </div>
+        <p id="error-report-photo" class="field-error" role="alert" hidden></p>
+      </div>
+
+      <!-- Ubicación geolocalizada desde el mapa existente -->
+      <div class="form-field">
+        <div class="form-label-row">
+          <span class="form-label">
+            Ubicación en el campus <span class="required-mark" aria-hidden="true">*</span>
+          </span>
+        </div>
+
+        <div id="location-box" class="location-box">
+          <div class="location-status">
+            <span class="location-pin-badge" aria-hidden="true">🗺️</span>
+            <div>
+              <p id="location-status-text" class="location-status-text">
+                Sin ubicación seleccionada
+              </p>
+              <p id="location-coords-readout" class="location-coords-readout">
+                Usa el botón para elegir un punto en el mapa superior.
+              </p>
+            </div>
+          </div>
+
+          <input type="hidden" id="report-latitude" name="latitude" />
+          <input type="hidden" id="report-longitude" name="longitude" />
+
+          <button type="button" id="pick-location-btn" class="pick-location-btn">
+            📍 Seleccionar ubicación en el mapa
+          </button>
+        </div>
+        <p id="error-report-location" class="field-error" role="alert" hidden></p>
+      </div>
+    </div>
+
+    <!-- Datos adicionales del contrato REST (opcionales para no frenar el flujo < 60s) -->
+    <details class="optional-details">
+      <summary>Datos de contacto y validación de entrega (opcional)</summary>
+      <div class="optional-grid">
+        <div class="form-field">
+          <label for="report-phone" class="form-label">Teléfono / WhatsApp</label>
+          <input
+            type="tel"
+            id="report-phone"
+            name="phone"
+            class="form-input"
+            placeholder="Ej. 449 123 4567"
+            maxlength="25"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="report-security-question" class="form-label">Pregunta de seguridad</label>
+          <input
+            type="text"
+            id="report-security-question"
+            name="security_question"
+            class="form-input"
+            placeholder="Ej. ¿Qué fondo de pantalla tiene?"
+            maxlength="80"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="report-security-answer" class="form-label">Respuesta esperada</label>
+          <input
+            type="text"
+            id="report-security-answer"
+            name="security_answer"
+            class="form-input"
+            placeholder="Respuesta para validar al dueño"
+            maxlength="60"
+          />
+        </div>
+      </div>
+    </details>
+
+    <!-- Retroalimentación visual inmediata (éxito / error) -->
+    <div
+      id="report-form-feedback"
+      class="form-feedback"
+      role="status"
+      aria-live="polite"
+      hidden
+    ></div>
+
+    <!-- Acciones -->
+    <div class="form-actions">
+      <button type="button" id="reset-report-btn" class="reset-form-btn">
+        Limpiar formulario
+      </button>
+      <button type="submit" id="submit-report-btn" class="submit-report-btn">
+        Publicar reporte
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  import { initReportForm } from '../scripts/report-form.js';
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initReportForm);
+  } else {
+    initReportForm();
+  }
+</script>

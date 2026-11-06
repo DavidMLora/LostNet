@@ -5,6 +5,7 @@ import { applyFilters, setCategoryFilter, setSearchTerm } from './map-filters.js
 
 const DEFAULT_COORDS = [21.914, -102.316]; // Campus UAA / Aguascalientes
 const DEFAULT_ZOOM = 15;
+const FOUND_REPORTS_STORAGE_KEY = 'lostnet.found_reports';
 
 let mapInstance = null;
 let reportsLayer = null;
@@ -14,6 +15,7 @@ let selectionMarker = null;
 let rawReports = [];
 let rawSafePoints = [];
 let isPickingLocation = false;
+const runtimeFoundEntries = [];
 
 // Datos de respaldo para pruebas y demo si la API remota no responde
 const MOCK_REPORTS = [
@@ -82,6 +84,69 @@ function normalizeCoords(item) {
   return { lat: numLat, lng: numLng };
 }
 
+function getStoredFoundEntries() {
+  try {
+    const raw = globalThis.localStorage?.getItem(FOUND_REPORTS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? [...parsed, ...runtimeFoundEntries] : [...runtimeFoundEntries];
+  } catch {
+    return [...runtimeFoundEntries];
+  }
+}
+
+export function normalizeReportStatus(report) {
+  if (!report || typeof report !== 'object') return 'LOST';
+
+  // 1. Revisar propiedades de estado/tipo sin importar mayúsculas/minúsculas ni idioma
+  const rawStatus = String(
+    report.status ?? report.type ?? report.tipo ?? report.estado ?? ''
+  )
+    .trim()
+    .toUpperCase();
+
+  if (['FOUND', 'ENCONTRADO', 'ENCONTRADA', 'HALLADO'].includes(rawStatus)) {
+    return 'FOUND';
+  }
+
+  // 2. Verificar si el reporte fue registrado como FOUND desde el formulario local
+  // (respaldo cuando el backend remoto devuelve 'LOST' por defecto en GET /api/reportes)
+  const coords = normalizeCoords(report);
+  const reportId = report.id ? String(report.id) : null;
+  const reportDesc = String(report.description ?? report.desc_short ?? '')
+    .trim()
+    .toLowerCase();
+
+  const foundEntries = getStoredFoundEntries();
+  const matchesStoredFound = foundEntries.some((entry) => {
+    if (!entry) return false;
+    if (reportId && entry.id && String(entry.id) === reportId) return true;
+    if (coords && Number.isFinite(entry.lat) && Number.isFinite(entry.lng)) {
+      const sameCoords =
+        Math.abs(Number(coords.lat.toFixed(4)) - Number(entry.lat)) <= 0.0002 &&
+        Math.abs(Number(coords.lng.toFixed(4)) - Number(entry.lng)) <= 0.0002;
+      if (sameCoords && (!entry.desc || !reportDesc || reportDesc === entry.desc)) {
+        return true;
+      }
+    }
+    return false;
+  });
+
+  if (matchesStoredFound) {
+    return 'FOUND';
+  }
+
+  // 3. Respaldo para reportes ya guardados en el servidor cuya descripción indica hallazgo
+  if (/\b(encontrad[oa]s?|found)\b/i.test(reportDesc)) {
+    return 'FOUND';
+  }
+
+  if (['LOST', 'PERDIDO', 'PERDIDA'].includes(rawStatus)) {
+    return 'LOST';
+  }
+
+  return 'LOST';
+}
+
 export function initMap() {
   const container = document.getElementById('map');
   if (!container || mapInstance) return;
@@ -98,7 +163,22 @@ export function initMap() {
   mapInstance.on('click', handleMapClick);
 
   document.addEventListener('lostnet:map:pick-requested', enableLocationPicking);
-  document.addEventListener('lostnet:reports:changed', async () => {
+  document.addEventListener('lostnet:reports:changed', async (event) => {
+    const detail = event?.detail;
+    if (detail && String(detail.status ?? '').trim().toUpperCase() === 'FOUND') {
+      runtimeFoundEntries.push({
+        id: detail.reportId ? String(detail.reportId) : null,
+        lat: Number(Number(detail.latitude).toFixed(4)),
+        lng: Number(Number(detail.longitude).toFixed(4)),
+        desc: String(detail.description ?? '').trim().toLowerCase(),
+      });
+    }
+
+    if (selectionMarker) {
+      selectionMarker.remove();
+      selectionMarker = null;
+    }
+
     await fetchReports();
     renderFilteredReports();
   });
@@ -209,8 +289,10 @@ function renderFilteredReports() {
     const coords = normalizeCoords(report);
     if (!coords) return;
 
-    const isLost = (report.status || '').toUpperCase() === 'LOST';
-    const className = isLost ? 'custom-pin-lost' : 'custom-pin-found';
+    const normalizedStatus = normalizeReportStatus(report);
+    const isFound = normalizedStatus === 'FOUND';
+    const isLost = !isFound;
+    const className = isFound ? 'custom-pin-found' : 'custom-pin-lost';
 
     const icon = L.divIcon({
       className,
@@ -220,10 +302,17 @@ function renderFilteredReports() {
 
     const marker = L.marker([coords.lat, coords.lng], { icon });
 
-    const photoUrl = report.foto ? api.resolveUrl(report.foto) : null;
+    const rawPhoto =
+      report.foto ||
+      (report.photo_url && report.photo_url !== '/photos/no_image.png'
+        ? report.photo_url
+        : null);
+    const photoUrl = rawPhoto ? api.resolveUrl(rawPhoto) : null;
     const photoHtml = photoUrl
       ? `<div style="margin-top: 6px;"><img src="${photoUrl}" alt="Foto del reporte" style="width: 100%; max-height: 120px; object-fit: cover; border-radius: 4px;" /></div>`
       : '';
+
+    const descriptionText = report.description || report.desc_short || '';
 
     marker.bindPopup(`
       <div style="font-family: inherit; max-width: 200px;">
@@ -231,7 +320,7 @@ function renderFilteredReports() {
           ${isLost ? 'Objeto Perdido' : 'Objeto Encontrado'}
         </span>
         <h4 style="margin: 4px 0 2px 0;">${report.category || 'Sin categoría'}</h4>
-        <p style="margin: 0; font-size: 0.85rem;">${report.description || ''}</p>
+        <p style="margin: 0; font-size: 0.85rem;">${descriptionText}</p>
         ${photoHtml}
       </div>
     `);

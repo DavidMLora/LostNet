@@ -19,7 +19,7 @@ export function applyFilters(reports = []) {
       currentCategory === 'TODOS' || reportCat === currentCategory;
 
     // 2. Filtro por término de búsqueda en descripción
-    const description = (report.description || '').toLowerCase();
+    const description = (report.description || report.desc_short || '').toLowerCase();
     const matchesSearch =
       !currentSearchTerm || description.includes(currentSearchTerm);
 
