@@ -3,7 +3,7 @@ import L from 'leaflet';
 import { api, ENDPOINTS } from './api.js';
 import { applyFilters, setCategoryFilter, setSearchTerm } from './map-filters.js';
 
-const DEFAULT_COORDS = [21.914, -102.316]; // Aguascalientes / Campus
+const DEFAULT_COORDS = [21.914, -102.316]; // Campus UAA / Aguascalientes
 const DEFAULT_ZOOM = 15;
 
 let mapInstance = null;
@@ -14,6 +14,63 @@ let selectionMarker = null;
 let rawReports = [];
 let rawSafePoints = [];
 let isPickingLocation = false;
+
+// Datos de respaldo para pruebas y demo si la API remota no responde
+const MOCK_REPORTS = [
+  {
+    id: 'rep-1',
+    category: 'Electrónica',
+    description: 'Audífonos Bluetooth JBL negros en estuche',
+    status: 'LOST',
+    latitude: 21.9163,
+    longitude: -102.3168,
+    foto: null
+  },
+  {
+    id: 'rep-2',
+    category: 'Documentos',
+    description: 'Credencial universitaria UAA vigente',
+    status: 'FOUND',
+    latitude: 21.9135,
+    longitude: -102.3155,
+    foto: null
+  },
+  {
+    id: 'rep-3',
+    category: 'Ropa',
+    description: 'Sudadera deportiva color gris talla M',
+    status: 'LOST',
+    latitude: 21.9152,
+    longitude: -102.3125,
+    foto: null
+  },
+  {
+    id: 'rep-4',
+    category: 'Otros',
+    description: 'Termo metálico color verde olivo',
+    status: 'FOUND',
+    latitude: 21.9128,
+    longitude: -102.3190,
+    foto: null
+  }
+];
+
+const MOCK_SAFE_POINTS = [
+  {
+    id: 'safe-1',
+    nombre: 'Caseta Principal de Vigilancia',
+    horario: '24 horas',
+    latitude: 21.9142,
+    longitude: -102.3160
+  },
+  {
+    id: 'safe-2',
+    nombre: 'Recepción del Edificio Central',
+    horario: '08:00 - 20:00',
+    latitude: 21.9170,
+    longitude: -102.3140
+  }
+];
 
 function normalizeCoords(item) {
   const lat = item.latitude !== undefined ? item.latitude : item.lat;
@@ -38,10 +95,8 @@ export function initMap() {
   safePointsLayer = L.layerGroup().addTo(mapInstance);
   reportsLayer = L.layerGroup().addTo(mapInstance);
 
-  // Escuchar clics en el mapa
   mapInstance.on('click', handleMapClick);
 
-  // Escuchar eventos de integración entre módulos según contrato
   document.addEventListener('lostnet:map:pick-requested', enableLocationPicking);
   document.addEventListener('lostnet:reports:changed', async () => {
     await fetchReports();
@@ -70,14 +125,12 @@ function handleMapClick(e) {
     selectionMarker = L.marker([latitude, longitude], { icon: pickIcon }).addTo(mapInstance);
   }
 
-  // Notificar al formulario del compañero B
   document.dispatchEvent(
     new CustomEvent('lostnet:map:location-selected', {
       detail: { latitude, longitude }
     })
   );
 
-  // Desactivar modo selección tras la elección
   disableLocationPicking();
 }
 
@@ -104,20 +157,20 @@ async function loadInitialData() {
 async function fetchReports() {
   try {
     const data = await api.get(ENDPOINTS.REPORTES);
-    rawReports = Array.isArray(data) ? data : [];
+    rawReports = Array.isArray(data) && data.length > 0 ? data : MOCK_REPORTS;
   } catch (err) {
-    console.error('Error cargando reportes:', err);
-    rawReports = [];
+    console.warn('API no disponible, cargando reportes locales de respaldo:', err.message);
+    rawReports = MOCK_REPORTS;
   }
 }
 
 async function fetchSafePoints() {
   try {
     const data = await api.get(ENDPOINTS.PUNTOS_SEGUROS);
-    rawSafePoints = Array.isArray(data) ? data : [];
+    rawSafePoints = Array.isArray(data) && data.length > 0 ? data : MOCK_SAFE_POINTS;
   } catch (err) {
-    console.error('Error cargando puntos seguros:', err);
-    rawSafePoints = [];
+    console.warn('API no disponible, cargando puntos seguros de respaldo:', err.message);
+    rawSafePoints = MOCK_SAFE_POINTS;
   }
 }
 
@@ -156,7 +209,6 @@ function renderFilteredReports() {
     const coords = normalizeCoords(report);
     if (!coords) return;
 
-    // Rojo para LOST, Azul para FOUND
     const isLost = (report.status || '').toUpperCase() === 'LOST';
     const className = isLost ? 'custom-pin-lost' : 'custom-pin-found';
 
@@ -189,7 +241,6 @@ function renderFilteredReports() {
 }
 
 function setupUIEventListeners() {
-  // Buscador por descripción
   const searchInput = document.getElementById('map-search-input');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
@@ -198,7 +249,6 @@ function setupUIEventListeners() {
     });
   }
 
-  // Chips de categoría
   const chips = document.querySelectorAll('.chip-btn');
   chips.forEach((chip) => {
     chip.addEventListener('click', () => {
