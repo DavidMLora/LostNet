@@ -1,6 +1,8 @@
 ---
 import Brand from '../components/Brand.astro';
 import Layout from '../layouts/Layout.astro';
+import MapView from '../components/MapView.astro';
+import '../styles/dashboard.css';
 ---
 
 <Layout title="Panel">
@@ -20,9 +22,10 @@ import Layout from '../layouts/Layout.astro';
         <p id="session-greeting"></p>
       </div>
 
-      <section id="map-module" class="placeholder" aria-labelledby="map-title">
-        <h2 id="map-title">Mapa de reportes</h2>
-        <p>El módulo de mapa se integrará aquí en una fase posterior.</p>
+      <!-- Aquí entra el módulo de mapa real -->
+      <section id="map-module" aria-labelledby="map-title">
+        <h2 id="map-title" class="eyebrow">Mapa de reportes y puntos seguros</h2>
+        <MapView />
       </section>
     </div>
   </main>
@@ -114,13 +117,5 @@ import Layout from '../layouts/Layout.astro';
   .dashboard-intro { padding-block: 3rem 1.5rem; }
   .dashboard-intro h1 { margin-block: 0.5rem; font-size: clamp(2rem, 5vw, 3rem); }
 
-  .placeholder {
-    padding: clamp(1.25rem, 4vw, 2.5rem);
-    border: 1px dashed var(--line);
-    border-radius: 1rem;
-    background: var(--surface);
-  }
-
-  .placeholder h2 { margin-block: 0 0.5rem; font-size: 1.25rem; }
-  .placeholder p, #session-greeting { margin: 0; color: var(--muted); }
+  #map-title { margin-block-end: 0.75rem; }
 </style>
