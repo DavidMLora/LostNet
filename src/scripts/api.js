@@ -22,7 +22,7 @@ export class ApiError extends Error {
 
 export class ApiService {
   constructor({ baseUrl = API_BASE_URL, timeoutMs = 5000, postTimeoutMs = timeoutMs * 12 } = {}) {
-    this.baseUrl = baseUrl.replace(/\/+$/, '');
+    this.baseUrl = (baseUrl || 'https://lostnet-api.tail0e8b19.ts.net/api').replace(/\/+$/, '');
     this.timeoutMs = timeoutMs;
     this.postTimeoutMs = postTimeoutMs;
   }
@@ -57,13 +57,9 @@ export class ApiService {
   }
 
   async #request(method, endpoint, { params = {}, body, headers }) {
-    const base = new URL(this.baseUrl);
-    const url = new URL(`${this.baseUrl}${endpoint}`);
-    const prefix = base.pathname.replace(/\/$/, '');
-    if (!endpoint.startsWith('/') || url.origin !== base.origin
-      || !url.pathname.startsWith(`${prefix}/`)) {
-      throw new TypeError('Usa una ruta relativa al prefijo de la API.');
-    }
+    const formattedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = new URL(`${this.baseUrl}${formattedEndpoint}`);
+
     for (const [key, value] of Object.entries(params)) {
       if (value != null) url.searchParams.set(key, value);
     }
@@ -72,6 +68,7 @@ export class ApiService {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(),
       method === 'POST' ? this.postTimeoutMs : this.timeoutMs);
+
     try {
       const response = await fetch(url, { method, body, headers, signal: controller.signal });
       if (!response.ok) {

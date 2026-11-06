@@ -1,0 +1,51 @@
+---
+// src/components/MapView.astro
+---
+
+<div class="map-section">
+  <!-- Controles: Buscador y Chips -->
+  <div class="map-controls">
+    <div class="search-bar">
+      <input
+        type="search"
+        id="map-search-input"
+        placeholder="Buscar por descripción..."
+        aria-label="Buscar reportes"
+      />
+    </div>
+
+    <div class="filter-chips" role="group" aria-label="Filtro por categorías">
+      <button type="button" class="chip-btn active" data-category="TODOS">Todos</button>
+      <button type="button" class="chip-btn" data-category="Documentos">Documentos</button>
+      <button type="button" class="chip-btn" data-category="Electrónica">Electrónica</button>
+      <button type="button" class="chip-btn" data-category="Ropa">Ropa</button>
+      <button type="button" class="chip-btn" data-category="Otros">Otros</button>
+    </div>
+  </div>
+
+  <!-- Contenedor del Mapa y Banner de Selección -->
+  <div class="map-wrapper">
+    <div id="map-selection-banner" class="selection-banner" hidden>
+      📍 Haz clic en el mapa para marcar la ubicación del reporte
+    </div>
+    <div id="map"></div>
+  </div>
+</div>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin=""
+/>
+
+<script>
+  import { initMap } from '../scripts/map.js';
+
+  // Ejecutar cuando el contenedor esté disponible en el DOM
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMap);
+  } else {
+    initMap();
+  }
+</script>
