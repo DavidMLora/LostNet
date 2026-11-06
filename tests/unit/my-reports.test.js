@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
-import { belongsToUser } from '../src/scripts/my-reports.js';
+import { test } from 'vitest';
+import { belongsToUser } from '../../src/scripts/my-reports.js';
 
 const user = { sub: 'google-user-123', email: 'sebas@example.test' };
 
