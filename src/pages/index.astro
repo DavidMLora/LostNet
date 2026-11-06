@@ -1,0 +1,78 @@
+---
+import Brand from '../components/Brand.astro';
+import Layout from '../layouts/Layout.astro';
+import '../styles/login.css';
+---
+
+<Layout title="Iniciar sesión">
+  <main class="login">
+    <section class="login-brand" aria-label="LostNet">
+      <Brand />
+      <div class="login-intro">
+        <p class="eyebrow">Objetos perdidos y encontrados</p>
+        <p class="login-tagline">Encuentra lo que perdiste.</p>
+        <p class="login-summary">Una comunidad para encontrar lo que perdiste y devolver lo que encontraste.</p>
+      </div>
+      <svg class="login-art" viewBox="0 0 320 220" fill="none" aria-hidden="true">
+        <circle cx="205" cy="128" r="28" />
+        <circle cx="205" cy="128" r="55" />
+        <circle cx="205" cy="128" r="85" />
+        <circle cx="205" cy="128" r="114" />
+        <path d="M24 200 90 147l43 16 72-35 54-82 46-23" stroke-dasharray="4 6" />
+        <circle cx="205" cy="128" r="6" fill="currentColor" />
+        <circle cx="90" cy="147" r="4" fill="currentColor" />
+        <circle cx="259" cy="46" r="4" fill="currentColor" />
+      </svg>
+    </section>
+
+    <section class="login-panel" aria-labelledby="login-title">
+      <div class="login-card">
+        <p class="eyebrow">Tu cuenta</p>
+        <h1 id="login-title">Inicia sesión</h1>
+        <p>Usa tu cuenta de Google para acceder a LostNet.</p>
+        <div id="google-sign-in" aria-label="Acceso con Google"></div>
+        <p id="login-status" class="login-status" role="status"></p>
+        <noscript><p>Activa JavaScript para iniciar sesión con Google.</p></noscript>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<script>
+  import { renderGoogleSignIn } from '../scripts/auth.js';
+  import { GOOGLE_CLIENT_ID } from '../scripts/config.js';
+  import { getUser } from '../scripts/session.js';
+
+  const status = document.getElementById('login-status');
+  const button = document.getElementById('google-sign-in');
+  const openDashboard = () => window.location.replace('/dashboard/');
+
+  async function start() {
+    if (getUser()) {
+      openDashboard();
+      return;
+    }
+    if (!GOOGLE_CLIENT_ID) {
+      status.textContent = 'Configura PUBLIC_GOOGLE_CLIENT_ID para habilitar el acceso.';
+      return;
+    }
+
+    status.textContent = 'Cargando acceso con Google…';
+    try {
+      await renderGoogleSignIn(button, {
+        onSuccess: openDashboard,
+        onError: () => {
+          status.textContent = 'No se pudo iniciar la sesión. Revisa que el navegador permita el almacenamiento y vuelve a intentarlo.';
+        },
+      });
+      status.textContent = '';
+    } catch {
+      status.textContent = 'No se pudo preparar el acceso con Google. Comprueba tu conexión y recarga esta página.';
+    }
+  }
+
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted && getUser()) openDashboard();
+  });
+  void start();
+</script>
