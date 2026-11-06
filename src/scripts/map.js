@@ -165,9 +165,37 @@ export function initMap() {
   document.addEventListener('lostnet:map:pick-requested', enableLocationPicking);
   document.addEventListener('lostnet:reports:changed', async (event) => {
     const detail = event?.detail;
-    if (detail && String(detail.status ?? '').trim().toUpperCase() === 'FOUND') {
+    const reportId = detail?.reportId ? String(detail.reportId) : null;
+    const isFound = String(detail?.status ?? '').trim().toUpperCase() === 'FOUND';
+
+    if (detail?.action === 'updated' && reportId) {
+      const updatedEntry = {
+        id: reportId,
+        lat: Number(Number(detail.latitude).toFixed(4)),
+        lng: Number(Number(detail.longitude).toFixed(4)),
+        desc: String(detail.description ?? '').trim().toLowerCase(),
+      };
+      for (let index = runtimeFoundEntries.length - 1; index >= 0; index -= 1) {
+        if (String(runtimeFoundEntries[index]?.id) === reportId) runtimeFoundEntries.splice(index, 1);
+      }
+      try {
+        const stored = JSON.parse(globalThis.localStorage?.getItem(FOUND_REPORTS_STORAGE_KEY) || '[]');
+        const entries = Array.isArray(stored)
+          ? stored.filter((entry) => String(entry?.id) !== reportId)
+          : [];
+        if (isFound && Number.isFinite(updatedEntry.lat) && Number.isFinite(updatedEntry.lng)) {
+          entries.push(updatedEntry);
+        }
+        globalThis.localStorage?.setItem(FOUND_REPORTS_STORAGE_KEY, JSON.stringify(entries.slice(-100)));
+      } catch {
+        // El mapa puede actualizarse desde la API aunque el almacenamiento local esté bloqueado.
+      }
+      if (isFound && Number.isFinite(updatedEntry.lat) && Number.isFinite(updatedEntry.lng)) {
+        runtimeFoundEntries.push(updatedEntry);
+      }
+    } else if (detail && isFound) {
       runtimeFoundEntries.push({
-        id: detail.reportId ? String(detail.reportId) : null,
+        id: reportId,
         lat: Number(Number(detail.latitude).toFixed(4)),
         lng: Number(Number(detail.longitude).toFixed(4)),
         desc: String(detail.description ?? '').trim().toLowerCase(),

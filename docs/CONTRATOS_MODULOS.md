@@ -28,6 +28,7 @@ const eliminacion = await api.delete(
 
 - `get(ruta, params)` y `delete(ruta, params)` codifican los parámetros. GET incorpora `_t` para conservar el comportamiento de lectura de LostNetWEB.
 - `post(ruta, objeto)` serializa el objeto como JSON. `post(ruta, formData)` transmite el multipart y deja al navegador definir `Content-Type` y su boundary. El tercer argumento opcional es `{ params }`.
+- `put(ruta, objeto)` serializa actualizaciones como JSON; `put(ruta, formData)` transmite multipart sin fijar el boundary.
 - Las promesas devuelven el JSON recibido o `null` en HTTP 204/205. `ApiError.code` distingue `http`, `network`, `timeout` y `response`. En errores HTTP, `status` contiene el código. CORS, TLS y problemas de conexión pueden aparecer como `network` en el navegador.
 - Los tiempos predeterminados son 5 s en GET y DELETE, y 60 s en POST para admitir cargas. Conserva el borrador ante un fallo y evita duplicar un envío si su resultado quedó indeterminado por un problema de conexión.
 - Para fotografías recibidas, `api.resolveUrl(path)` resuelve rutas relativas contra el origen de la API.
@@ -56,7 +57,7 @@ Usa estos eventos de `CustomEvent` en `document` para coordinar la integración:
 | --- | --- | --- |
 | `lostnet:map:pick-requested` | Formulario | Sin detalle. El mapa entra en modo selección. |
 | `lostnet:map:location-selected` | Mapa | `{ latitude, longitude }` con números en grados. El formulario conserva el punto. |
-| `lostnet:reports:changed` | Publicación o Mis reportes | `{ action: 'created' \| 'deleted', reportId? }`. El mapa actualiza los reportes y las vistas de listado pueden refrescarse. |
+| `lostnet:reports:changed` | Publicación o Mis reportes | `{ action: 'created' \| 'updated' \| 'deleted', reportId? }`. El mapa actualiza los reportes y las vistas de listado pueden refrescarse. |
 
 El mapa emite la ubicación solo durante una selección solicitada. El formulario valida latitud en `[-90, 90]` y longitud en `[-180, 180]` antes de publicar. Por ejemplo:
 
@@ -96,3 +97,6 @@ Emite el evento después de que la publicación se confirme. `reportId` es opcio
 2. Conserva los registros cuyo propietario, `report.user_id || report.email`, coincide con `user.sub` o `user.email`. La coincidencia organiza la vista y el servidor decide los permisos efectivos.
 3. Tras confirmar la acción con el usuario, usa el ID real del reporte en `DELETE /api/reportes/{id}?user_id={sub}`. No uses el índice de un listado como identificador.
 4. Tras el éxito, retira el registro de la vista y emite `lostnet:reports:changed` con `{ action: 'deleted', reportId }`. Ante error, conserva el registro o vuelve a consultar el listado y muestra el resultado.
+5. La edición envía `PUT /api/reportes/{id}` con `user_id`, `email`, `title`, `description`, `category`, `status` y `type`. Tras el éxito emite `lostnet:reports:changed` con `action: 'updated'` para recargar listado y mapa.
+
+> El backend de referencia no documenta todavía un endpoint de actualización. `PUT /api/reportes/{id}` queda como contrato propuesto para integrar CU-10; la API simulada local sí lo implementa. Confirma o adapta este método con el responsable del backend antes de usar edición en producción.

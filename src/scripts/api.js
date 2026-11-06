@@ -42,6 +42,17 @@ export class ApiService {
     });
   }
 
+  async put(endpoint, body, { params } = {}) {
+    if (body instanceof FormData) {
+      return this.#request('PUT', endpoint, { params, body });
+    }
+    return this.#request('PUT', endpoint, {
+      params,
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   delete(endpoint, params) {
     return this.#request('DELETE', endpoint, { params });
   }

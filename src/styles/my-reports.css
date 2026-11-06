@@ -28,6 +28,7 @@
 }
 
 .my-reports-refresh,
+.my-report-edit,
 .my-report-delete {
   min-height: 2.6rem;
   padding: 0.6rem 0.9rem;
@@ -42,6 +43,7 @@
 
 .my-reports-refresh:hover { border-color: var(--accent); }
 .my-reports-refresh:disabled,
+.my-report-edit:disabled,
 .my-report-delete:disabled { cursor: wait; opacity: 0.65; }
 
 .my-reports-feedback {
@@ -128,8 +130,11 @@
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
+  gap: 0.5rem;
 }
 
+.my-report-edit { border-color: #abc8ef; color: var(--accent); }
+.my-report-edit:hover { background: #eff6ff; }
 .my-report-delete {
   border-color: #f3b7b1;
   color: #a32219;
@@ -137,8 +142,73 @@
 
 .my-report-delete:hover { background: #fff3f2; }
 
+.my-report-edit-form {
+  display: grid;
+  gap: 0.8rem;
+  margin-block-start: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.my-report-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.my-report-edit-grid label {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.my-report-edit-grid input,
+.my-report-edit-grid select,
+.my-report-edit-grid textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 400;
+}
+
+.my-report-edit-grid textarea { resize: vertical; }
+
+.my-report-edit-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.my-report-edit-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.my-report-save,
+.my-report-cancel {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.my-report-save { border-color: var(--accent); background: var(--accent); color: #fff; }
+.my-report-save:disabled,
+.my-report-cancel:disabled { cursor: wait; opacity: 0.65; }
+
 @media (max-width: 38rem) {
   .my-reports-header { flex-direction: column; }
   .my-report-item { grid-template-columns: 1fr; }
   .my-report-actions { justify-content: flex-start; }
+  .my-report-edit-grid { grid-template-columns: 1fr; }
 }

@@ -2,6 +2,7 @@ import { api, ApiError, ENDPOINTS } from './api.js';
 import { getUser } from './session.js';
 
 const FOUND_STATUSES = new Set(['FOUND', 'ENCONTRADO', 'ENCONTRADA', 'HALLADO']);
+const CATEGORIES = ['Documentos', 'Electrónica', 'Ropa', 'Otros'];
 
 function normalizedValue(value) {
   return typeof value === 'string' || typeof value === 'number'
@@ -28,6 +29,13 @@ function reportStatus(report) {
     .trim()
     .toUpperCase();
   return FOUND_STATUSES.has(value) ? 'Encontrado' : 'Perdido';
+}
+
+function reportStatusValue(report) {
+  const value = String(report.status ?? report.type ?? report.tipo ?? report.estado ?? '')
+    .trim()
+    .toUpperCase();
+  return FOUND_STATUSES.has(value) ? 'FOUND' : 'LOST';
 }
 
 function reportTitle(report) {
@@ -62,7 +70,118 @@ function setFeedback(element, message, kind = '') {
   element.dataset.kind = kind;
 }
 
-function buildReportCard(report, onDelete, isDeleting) {
+function buildEditForm(report, onSave, onCancel, isUpdating) {
+  const form = document.createElement('form');
+  form.className = 'my-report-edit-form';
+
+  const fields = document.createElement('div');
+  fields.className = 'my-report-edit-grid';
+
+  const titleLabel = document.createElement('label');
+  titleLabel.textContent = 'Título';
+  const titleInput = document.createElement('input');
+  titleInput.name = 'title';
+  titleInput.type = 'text';
+  titleInput.minLength = 3;
+  titleInput.maxLength = 60;
+  titleInput.required = true;
+  titleInput.value = report.title || report.nombre || report.description || report.desc_short || '';
+  titleLabel.append(titleInput);
+
+  const descriptionLabel = document.createElement('label');
+  descriptionLabel.textContent = 'Descripción';
+  const descriptionInput = document.createElement('textarea');
+  descriptionInput.name = 'description';
+  descriptionInput.minLength = 5;
+  descriptionInput.maxLength = 250;
+  descriptionInput.rows = 3;
+  descriptionInput.required = true;
+  descriptionInput.value = report.description || report.desc_short || '';
+  descriptionLabel.append(descriptionInput);
+
+  const categoryLabel = document.createElement('label');
+  categoryLabel.textContent = 'Categoría';
+  const categorySelect = document.createElement('select');
+  categorySelect.name = 'category';
+  categorySelect.required = true;
+  const currentCategory = report.category || 'Otros';
+  const categories = CATEGORIES.includes(currentCategory)
+    ? CATEGORIES
+    : [...CATEGORIES, currentCategory];
+  categories.forEach((category) => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category;
+    option.selected = category === currentCategory;
+    categorySelect.append(option);
+  });
+  categoryLabel.append(categorySelect);
+
+  const statusLabel = document.createElement('label');
+  statusLabel.textContent = 'Tipo de reporte';
+  const statusSelect = document.createElement('select');
+  statusSelect.name = 'status';
+  statusSelect.required = true;
+  [
+    ['LOST', 'Objeto perdido'],
+    ['FOUND', 'Objeto encontrado'],
+  ].forEach(([value, label]) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    option.selected = value === reportStatusValue(report);
+    statusSelect.append(option);
+  });
+  statusLabel.append(statusSelect);
+
+  fields.append(titleLabel, descriptionLabel, categoryLabel, statusLabel);
+  form.append(fields);
+
+  const note = document.createElement('p');
+  note.className = 'my-report-edit-note';
+  note.textContent = 'La fotografía y la ubicación actuales se conservarán.';
+  form.append(note);
+
+  const actions = document.createElement('div');
+  actions.className = 'my-report-edit-actions';
+  const saveButton = document.createElement('button');
+  saveButton.className = 'my-report-save';
+  saveButton.type = 'submit';
+  saveButton.textContent = isUpdating ? 'Guardando…' : 'Guardar cambios';
+  saveButton.disabled = isUpdating;
+  const cancelButton = document.createElement('button');
+  cancelButton.className = 'my-report-cancel';
+  cancelButton.type = 'button';
+  cancelButton.textContent = 'Cancelar';
+  cancelButton.disabled = isUpdating;
+  cancelButton.addEventListener('click', onCancel);
+  actions.append(saveButton, cancelButton);
+  form.append(actions);
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (form.reportValidity()) {
+      onSave(report, {
+        title: titleInput.value.trim(),
+        description: descriptionInput.value.trim(),
+        category: categorySelect.value,
+        status: statusSelect.value,
+      });
+    }
+  });
+
+  return form;
+}
+
+function buildReportCard(report, {
+  onEdit,
+  onDelete,
+  onSave,
+  onCancel,
+  isEditing,
+  isDeleting,
+  isUpdating,
+}) {
   const card = document.createElement('article');
   card.className = 'my-report-item';
 
@@ -111,6 +230,10 @@ function buildReportCard(report, onDelete, isDeleting) {
   }
   body.append(metadata);
 
+  if (isEditing) {
+    body.append(buildEditForm(report, onSave, onCancel, isUpdating));
+  }
+
   const imageUrl = photoSource(report);
   if (imageUrl) {
     const image = document.createElement('img');
@@ -124,13 +247,19 @@ function buildReportCard(report, onDelete, isDeleting) {
 
   const actions = document.createElement('div');
   actions.className = 'my-report-actions';
+  const editButton = document.createElement('button');
+  editButton.className = 'my-report-edit';
+  editButton.type = 'button';
+  editButton.textContent = isEditing ? 'Editando' : 'Editar';
+  editButton.disabled = isEditing || isDeleting || isUpdating;
+  editButton.addEventListener('click', onEdit);
   const deleteButton = document.createElement('button');
   deleteButton.className = 'my-report-delete';
   deleteButton.type = 'button';
   deleteButton.textContent = isDeleting ? 'Eliminando…' : 'Eliminar reporte';
-  deleteButton.disabled = isDeleting;
+  deleteButton.disabled = isDeleting || isUpdating || isEditing;
   deleteButton.addEventListener('click', () => onDelete(report));
-  actions.append(deleteButton);
+  actions.append(editButton, deleteButton);
 
   card.append(body, actions);
   return card;
@@ -145,14 +274,89 @@ export function initMyReports() {
 
   let reports = [];
   let isLoading = false;
+  let editingId = null;
   const deletingIds = new Set();
+  const updatingIds = new Set();
 
   function render() {
     list.replaceChildren();
     reports.forEach((report) => {
-      list.append(buildReportCard(report, deleteReport, deletingIds.has(String(report.id))));
+      const id = String(report.id);
+      list.append(buildReportCard(report, {
+        onEdit: () => {
+          if (report.id === null || report.id === undefined || report.id === '') {
+            setFeedback(feedback, 'Este reporte no tiene un identificador válido y no se puede actualizar.', 'error');
+            return;
+          }
+          editingId = id;
+          setFeedback(feedback, '', '');
+          render();
+        },
+        onDelete: deleteReport,
+        onSave: updateReport,
+        onCancel: () => {
+          editingId = null;
+          render();
+        },
+        isEditing: editingId === id,
+        isDeleting: deletingIds.has(id),
+        isUpdating: updatingIds.has(id),
+      }));
     });
-    refreshButton.disabled = isLoading || deletingIds.size > 0;
+    refreshButton.disabled = isLoading || deletingIds.size > 0 || updatingIds.size > 0;
+  }
+
+  async function updateReport(report, changes) {
+    const user = getUser();
+    const reportId = report?.id;
+    if (!user?.sub || !user?.email || !belongsToUser(report, user)) {
+      setFeedback(feedback, 'Tu sesión ya no puede actualizar este reporte.', 'error');
+      return;
+    }
+    if (reportId === null || reportId === undefined || reportId === '') {
+      setFeedback(feedback, 'Este reporte no tiene un identificador válido y no se puede actualizar.', 'error');
+      return;
+    }
+
+    const id = String(reportId);
+    updatingIds.add(id);
+    render();
+    try {
+      await api.put(`${ENDPOINTS.REPORTES}/${encodeURIComponent(id)}`, {
+        user_id: user.sub,
+        email: user.email,
+        ...changes,
+        type: changes.status,
+      });
+      const updatedReport = { ...report, ...changes, type: changes.status };
+      reports = reports.map((item) => String(item.id) === id ? updatedReport : item);
+      editingId = null;
+      document.dispatchEvent(new CustomEvent('lostnet:reports:changed', {
+        detail: {
+          action: 'updated',
+          reportId: id,
+          status: changes.status,
+          latitude: updatedReport.latitude ?? updatedReport.lat,
+          longitude: updatedReport.longitude ?? updatedReport.lon,
+          description: changes.description,
+        },
+      }));
+      setFeedback(feedback, `Se actualizaron los datos de “${changes.title}”.`, 'success');
+    } catch (error) {
+      const message = error instanceof ApiError
+        ? error.code === 'network' || error.code === 'timeout'
+          ? 'No se pudo confirmar la actualización por un problema de conexión. Revisa el reporte antes de repetirla.'
+          : error.status === 404
+            ? 'El reporte ya no existe o el servidor no encontró la ruta de actualización.'
+            : error.status === 405
+              ? 'El servidor aún no admite actualizar reportes mediante PUT /api/reportes/{id}.'
+              : `No se pudo actualizar el reporte${error.status ? ` (HTTP ${error.status})` : ''}. Inténtalo de nuevo.`
+        : 'No se pudo actualizar el reporte. Inténtalo de nuevo.';
+      setFeedback(feedback, message, 'error');
+    } finally {
+      updatingIds.delete(id);
+      render();
+    }
   }
 
   async function loadReports({ preserveOnError = false } = {}) {
