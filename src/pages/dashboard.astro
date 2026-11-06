@@ -2,6 +2,7 @@
 import Brand from '../components/Brand.astro';
 import Layout from '../layouts/Layout.astro';
 import MapView from '../components/MapView.astro';
+import ReportForm from '../components/ReportForm.astro';
 import '../styles/dashboard.css';
 ---
 
@@ -26,6 +27,12 @@ import '../styles/dashboard.css';
       <section id="map-module" aria-labelledby="map-title">
         <h2 id="map-title" class="eyebrow">Mapa de reportes y puntos seguros</h2>
         <MapView />
+      </section>
+
+      <!-- Módulo de publicación de reportes (CU-03 / CU-07) -->
+      <section id="report-module" aria-labelledby="report-module-title">
+        <h2 id="report-module-title" class="eyebrow">Publicación de objetos perdidos y encontrados</h2>
+        <ReportForm />
       </section>
     </div>
   </main>
@@ -117,5 +124,8 @@ import '../styles/dashboard.css';
   .dashboard-intro { padding-block: 3rem 1.5rem; }
   .dashboard-intro h1 { margin-block: 0.5rem; font-size: clamp(2rem, 5vw, 3rem); }
 
-  #map-title { margin-block-end: 0.75rem; }
+  #map-title,
+  #report-module-title { margin-block-end: 0.75rem; }
+
+  #report-module { margin-block-start: 2.5rem; }
 </style>
