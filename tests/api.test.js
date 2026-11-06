@@ -56,6 +56,21 @@ test('POST con FormData deja que el navegador genere el boundary y conserva la f
   assert.deepEqual(await api.post(ENDPOINTS.REPORTAR, body), { id: 18 });
 });
 
+test('PUT serializa JSON y acepta parámetros de consulta', async (t) => {
+  const body = { user_id: 'test-user', description: 'Descripción editada' };
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    assert.equal(url.pathname, '/api/reportes/17');
+    assert.equal(url.searchParams.get('source'), 'my-reports');
+    assert.equal(options.method, 'PUT');
+    assert.equal(options.headers['Content-Type'], 'application/json');
+    assert.deepEqual(JSON.parse(options.body), body);
+    return Response.json({ id: 17, ...body });
+  });
+  assert.deepEqual(await api.put('/reportes/17', body, { params: { source: 'my-reports' } }), {
+    id: 17, ...body,
+  });
+});
+
 test('DELETE envía user_id en la consulta y acepta 204 sin cuerpo', async (t) => {
   t.mock.method(globalThis, 'fetch', async (url, options) => {
     assert.equal(url.pathname, '/api/reportes/17');
