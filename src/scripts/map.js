@@ -237,7 +237,7 @@ async function loadInitialData() {
 async function fetchReports() {
   try {
     const data = await api.get(ENDPOINTS.REPORTES);
-    rawReports = Array.isArray(data) && data.length > 0 ? data : MOCK_REPORTS;
+    rawReports = Array.isArray(data) ? data : MOCK_REPORTS;
   } catch (err) {
     console.warn('API no disponible, cargando reportes locales de respaldo:', err.message);
     rawReports = MOCK_REPORTS;

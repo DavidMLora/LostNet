@@ -58,7 +58,15 @@ export class ApiService {
 
   async #request(method, endpoint, { params = {}, body, headers }) {
     const formattedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const baseUrl = new URL(this.baseUrl);
     const url = new URL(`${this.baseUrl}${formattedEndpoint}`);
+    const basePath = baseUrl.pathname.replace(/\/+$/, '');
+    if (
+      url.origin !== baseUrl.origin
+      || (basePath && url.pathname !== basePath && !url.pathname.startsWith(`${basePath}/`))
+    ) {
+      throw new TypeError('La ruta de la API debe permanecer dentro de su prefijo.');
+    }
 
     for (const [key, value] of Object.entries(params)) {
       if (value != null) url.searchParams.set(key, value);
