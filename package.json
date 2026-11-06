@@ -10,7 +10,8 @@
     "test": "node --test"
   },
   "dependencies": {
-    "astro": "7.4.5"
+    "astro": "7.4.5",
+    "leaflet": "^1.9.4"
   },
   "engines": {
     "node": ">=24.16.0 <25",
