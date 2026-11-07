@@ -8,7 +8,13 @@
     "mock:api": "node scripts/mock-api.mjs",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "node --test"
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test": "npm run test:unit && npm run test:integration",
+    "lint": "eslint . --max-warnings=0",
+    "check:ci": "node scripts/check-ci.mjs",
+    "check:build": "node scripts/check-build.mjs",
+    "audit:security": "npm audit --audit-level=high"
   },
   "dependencies": {
     "astro": "7.4.5",
@@ -18,5 +24,16 @@
     "node": ">=24.16.0 <25",
     "npm": ">=11 <12"
   },
-  "packageManager": "npm@11.13.0"
+  "packageManager": "npm@11.13.0",
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@typescript-eslint/parser": "8.72.1",
+    "eslint": "10.14.0",
+    "eslint-plugin-astro": "3.2.1",
+    "globals": "17.14.0",
+    "msw": "3.0.3",
+    "typescript": "5.9.3",
+    "vitest": "5.1.0",
+    "yaml": "2.9.1"
+  }
 }

@@ -1,0 +1,21 @@
+# Only the files required to build and serve the static application enter the context.
+**
+!package.json
+!package-lock.json
+!astro.config.mjs
+!tsconfig.json
+!src/
+!src/**
+!public/
+!public/**
+!docker/
+!docker/nginx.conf
+!Dockerfile
+
+# Never copy secrets, even if placed under an otherwise allowed source directory.
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/node_modules/**
+**/.git/**
